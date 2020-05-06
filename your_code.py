@@ -91,7 +91,28 @@ class Client:
                 from prepare_registration to proceed_registration_response.
                 You need to design the state yourself.
         """
-        raise NotImplementedError
+        server_pk_parsed = jsonpickle.decode(server_pk)
+        secret_key = SecretKey.generate_random()
+        t = G1.order().random()
+        r_t = G1.order().random()
+        r_s = G1.order().random()
+        R = (G1.generator() ** r_t) * (server_pk_parsed.Y[0] ** r_t)
+        C = (G1.generator()**t) * (server_pk_parsed.Y[0] ** r_s)
+
+        # Add public inputs
+        m = hashlib.sha256()
+        m.update(G1.generator().to_binary())
+        m.update(server_pk_parsed.Y[0].to_binary())
+        m.update(R.to_binary())
+        m.update(C.to_binary())
+
+        c = Bn.from_binary(m.digest())
+        s_t = r_t.mod_sub(c * t, G1.order())
+        s_s = r_s.mod_sub(c * secret_key.x, G1.order())
+
+        req = IssuanceRequest(username, attributes, C, s_s, s_t)
+
+        return jsonpickle.encode(req)
 
     def proceed_registration_response(self, server_pk, server_response, private_state):
         """Process the response from the server.

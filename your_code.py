@@ -4,7 +4,7 @@ Classes that you need to complete.
 
 # Optional import
 from serialization import jsonpickle
-from petrelic.native.pairing import G1, G2, GTi, G1Element, G2Element
+from petrelic.multiplicative.pairing import G1, G2, GT, G1Elem, G2Elem
 from .crypto import PublicKey, SecretKey
 
 

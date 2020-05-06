@@ -1,6 +1,6 @@
 """Define the PS cryptosystem primitives."""
 from serialization import jsonpickle
-from petrelic.native.pairing import G1, G2, G1Element, G2Element
+from petrelic.multiplicative.pairing import G1, G2, GTi, G1Element, G2Element
 
 
 class PublicKeyHandler(jsonpickle.handlers.BaseHandler):
@@ -29,9 +29,9 @@ class PublicKey:
         """Initialize a public key.
 
         Args:
-            X (petrelic.native.pairing.G1): element of group G1
-            Y1 (petrelic.native.pairing.G1[]): a list of elements of group G1
-            Y2 (petrelic.native.pairing.G2[]): a list of elements of group G2
+            X (petrelic.multiplicative.pairing.G1): element of group G1
+            Y1 (petrelic.multiplicative.pairing.G1[]): a list of elements of group G1
+            Y2 (petrelic.multiplicative.pairing.G2[]): a list of elements of group G2
 
         Returns:
             PublicKey: a new instance of the class
@@ -49,9 +49,9 @@ class PublicKey:
         Return:
             PublicKey: a new instance of the class
         """
-        X = sk.x * G1.generator()
-        Y1 = list(map(lambda y: y*G1.generator(), sk.y))
-        Y2 = list(map(lambda y: y*G2.generator(), sk.y))
+        X = G1.generator() ** sk.x
+        Y1 = list(map(lambda y: G1.generator()**y, sk.y))
+        Y2 = list(map(lambda y: G2.generator()**y, sk.y))
 
         return PublicKey(X, Y1, Y2)
 
@@ -69,11 +69,11 @@ class SecretKey:
         Returns:
             SecretKey: a new instance of the class
         """
-        self.X = x * G1.generator()
+        self.X = G1.generator() ** x
         self.x = x
         self.y = y.copy()
 
-    def generate_random(y_length):
+    def generate_random(y_length=1):
         """Generate a random secret key.
 
         Args:

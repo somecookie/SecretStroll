@@ -1,27 +1,7 @@
 """Define the PS cryptosystem primitives."""
-from serialization import jsonpickle
-from petrelic.multiplicative.pairing import G1, G2, GTi, G1Element, G2Element
+from petrelic.multiplicative.pairing import G1, G2
 
 
-class PublicKeyHandler(jsonpickle.handlers.BaseHandler):
-    """Handler to pass a PublicKey in JSON format."""
-
-    def flatten(obj, data):
-        """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
-        data['X'] = obj.X.to_binary()
-        data['Y1'] = list(map(lambda Y: Y.to_binary(), obj.Y1))
-        data['Y2'] = list(map(lambda Y: Y.to_binary(), obj.Y2))
-
-    def restore(data):
-        """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
-        X = G1Element.from_binary(data['X'])
-        Y1 = list(map(lambda Y_bin: G1Element.from_binary(Y_bin), data['Y1']))
-        Y2 = list(map(lambda Y_bin: G2Element.from_binary(Y_bin), data['Y2']))
-
-        return PublicKey(X, Y1, Y2)
-
-
-@PublicKeyHandler.handles
 class PublicKey:
     """Public Key in PS cryptosystem."""
 

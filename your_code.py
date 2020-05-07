@@ -6,20 +6,19 @@ Classes that you need to complete.
 from serialization import jsonpickle
 from petrelic.multiplicative.pairing import G1, G2, GT, G1Element, G2Element
 from petrelic.bn import Bn
-from .crypto import PublicKey, SecretKey
-from .messages import IssuanceRequest
-import hashlib
+from crypto import PublicKey, SecretKey
+import json
 
 
 @jsonpickle.handlers.register(G1Element)
 class G1ElementHandler(jsonpickle.handlers.BaseHandler):
     """Handler to pass an element of G1 to JSON format."""
 
-    def flatten(obj, data):
+    def flatten(self, obj, data):
         """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
         data['bytes'] = obj.to_binary()
 
-    def restore(data):
+    def restore(self, data):
         """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
         return G1Element.from_binary(data['bytes'])
 
@@ -28,11 +27,11 @@ class G1ElementHandler(jsonpickle.handlers.BaseHandler):
 class G2ElementHandler(jsonpickle.handlers.BaseHandler):
     """Handler to pass an element of G2 to JSON format."""
 
-    def flatten(obj, data):
+    def flatten(self, obj, data):
         """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
         data['bytes'] = obj.to_binary()
 
-    def restore(data):
+    def restore(self, data):
         """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
         return G2Element.from_binary(data['bytes'])
 
@@ -41,38 +40,66 @@ class G2ElementHandler(jsonpickle.handlers.BaseHandler):
 class BnElementHandler(jsonpickle.handlers.BaseHandler):
     """Handler to pass an element of Bn to JSON format."""
 
-    def flatten(obj, data):
+    def flatten(self, obj, data):
         """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
         data['bytes'] = obj.binary()
 
-    def restore(data):
+    def restore(self, data):
         """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
         return Bn.from_binary(data['bytes'])
 
 
 class Server:
     """Server"""
+    Valid_Attributes = []
 
     @staticmethod
     def generate_ca(valid_attributes):
         """Initializes the credential system. Runs exactly once in the
-        beginning. Decides on schemes public parameters and choses a secret key
+        beginning. Decides on schemes public parameters and chooses a secret key
         for the server.
 
         Args:
-            valid_attributes (string): a list of all valid attributes. Users cannot
-            get a credential with a attribute which is not included here.
-
-            Note: You can use JSON to encode valid_attributes in the string.
+            valid_attributes (string): the path to a JSON file containing the attributes.
 
         Returns:
             (tuple): tuple containing:
                 byte[] : server's pubic information
                 byte[] : server's secret key
-            You are free to design this as you see fit, but all commuincations
+            You are free to design this as you see fit, but all communications
             needs to be encoded as byte arrays.
         """
-        raise NotImplementedError
+
+        with open(valid_attributes) as json_file:
+            attr_json = json.load(json_file)
+            if not Server.verify_attributes_list(attr_json):
+                raise TypeError("attributes format is not valid")
+            Server.Valid_Attributes = attr_json["user"] + attr_json["issuer"]
+            sk = SecretKey.generate_random(len(Server.Valid_Attributes))
+            pk = PublicKey.from_secret_key(sk)
+
+            return jsonpickle.encode(sk), jsonpickle.encode(pk)
+
+    @staticmethod
+    def verify_attributes_list(attrs):
+        """
+        Verifies if the JSON that represents the valid attributes is valid.
+        The JSON for L attributes, where k of them are user determined attributes and L-k are issuer determined,
+        must have the following format:
+        {
+            "user": ["a0",...,"a_(k-1)"]
+            "issuer": ["ak",...,"a_(L-1)"]
+        }
+        :param attrs: dict that represents the JSON
+        :return: boolean indicating if the JSON is valid or not
+        """
+        if "issuer" not in attrs or "user" not in attrs:
+            return False
+
+        if type(attrs["user"]) is not list or type(attrs["issuer"]) is not list:
+            return False
+
+        return all([isinstance(e, str) for e in attrs["user"]]) and all([isinstance(e, str) for e in attrs["issuer"]])
 
     def register(self, server_sk, issuance_request, username, attributes):
         """ Registers a new account on the server.
@@ -92,7 +119,7 @@ class Server:
         raise NotImplementedError
 
     def check_request_signature(
-        self, server_pk, message, revealed_attributes, signature
+            self, server_pk, message, revealed_attributes, signature
     ):
         """
 

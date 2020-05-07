@@ -2,7 +2,7 @@
 
 
 class IssuanceRequest:
-    """Client request for crendentials."""
+    """Client request for credentials."""
 
     def __init__(self, username, attributes, com, s_s, s_t):
         """Return a new instance of an issuance request.

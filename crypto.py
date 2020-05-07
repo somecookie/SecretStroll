@@ -20,6 +20,7 @@ class PublicKey:
         self.Y1 = Y1.copy()
         self.Y2 = Y2.copy()
 
+    @staticmethod
     def from_secret_key(sk):
         """Initialize a public using a secret key.
 
@@ -53,6 +54,7 @@ class SecretKey:
         self.x = x
         self.y = y.copy()
 
+    @staticmethod
     def generate_random(y_length=1):
         """Generate a random secret key.
 
@@ -63,7 +65,7 @@ class SecretKey:
             SecretKey: a new random instance of the class
         """
         if not y_length >= 1:
-            return None
+            raise ValueError("The number of y elements cannot be 0")
 
         x = G1.order().random()
         y = [G1.order().random() for _ in range(y_length)]

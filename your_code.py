@@ -4,18 +4,17 @@ Classes that you need to complete.
 
 import json
 
-from crypto import PublicKey, SecretKey
+from crypto import PublicKey, SecretKey, Signature
+from petrelic.multiplicative.pairing import G1
+from petrelic.bn import Bn
 from serialization import jsonpickle
-
-
-class ServerPublicInfo:
-    def __init__(self, public_key, valid_attributes):
-        self.public_key = public_key
-        self.valid_attributes = valid_attributes
+from messages import IssuanceResponse, IssuanceRequest
+import hashlib
 
 
 class Server:
     """Server"""
+    valid_attributes = []
 
     @staticmethod
     def generate_ca(valid_attributes):
@@ -39,12 +38,11 @@ class Server:
             if not Server.verify_attributes_list(attr_json):
                 raise TypeError("attributes format is not valid")
             attr_json["attributes"].insert(0, "secret_key")
+            Server.valid_attributes = attr_json["attributes"]
             sk = SecretKey.generate_random(len(attr_json["attributes"]))
             pk = PublicKey.from_secret_key(sk)
 
-            public_info = ServerPublicInfo(pk, attr_json["attributes"])
-
-            return jsonpickle.encode(public_info).encode("utf-8"), jsonpickle.encode(sk).encode("utf-8")
+            return jsonpickle.encode(pk).encode("utf-8"), jsonpickle.encode(sk).encode("utf-8")
 
     @staticmethod
     def verify_attributes_list(attrs):
@@ -82,8 +80,40 @@ class Server:
             response (bytes[]): the client should be able to build a credential
             with this response.
         """
+        for attr in attributes:
+            if attr not in Server.valid_attributes:
+                return b''
         req = issuance_request.decode("utf-8")
         req = jsonpickle.decode(req)
+
+        sk = jsonpickle.decode(server_sk.decode("utf-8"))
+        pk = PublicKey.from_secret_key(sk)
+        m = hashlib.sha256()
+        m.update(G1.generator().to_binary())
+        m.update(pk.Y1[0].to_binary())
+        m.update(req.R.to_binary())
+        m.update(req.commitment.to_binary())
+
+        c = Bn.from_binary(m.digest())
+        R = (G1.generator()**req.s_t)*(pk.Y1[0]**req.s_s)*(req.commitment**c)
+
+        if req.R != R:
+            return b''
+
+        u = G1.order().random()
+        sig1 = G1.order()**u
+
+        sig2 = sk.X*req.commitment
+        for i, attr in enumerate(Server.valid_attributes[1:]):
+            exp = 1 if attr in attributes else 0
+            sig2 = sig2*(pk.Y1[i]**exp)
+        sig2 = sig2**u
+
+        credential = Signature(sig1, sig2)
+        resp = IssuanceResponse(credential)
+
+        return jsonpickle.encode(resp).encode("utf8")
+
 
 
     def check_request_signature(

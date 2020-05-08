@@ -2,12 +2,10 @@
 Classes that you need to complete.
 """
 
-# Optional import
-from serialization import jsonpickle
-from petrelic.multiplicative.pairing import G1, G2, GT, G1Element, G2Element
-from petrelic.bn import Bn
-from crypto import PublicKey, SecretKey
 import json
+
+from crypto import PublicKey, SecretKey
+from serialization import jsonpickle
 
 
 class ServerPublicInfo:
@@ -40,7 +38,7 @@ class Server:
             attr_json = json.load(json_file)
             if not Server.verify_attributes_list(attr_json):
                 raise TypeError("attributes format is not valid")
-            attr_json["attributes"].insert(0,"secret_key")
+            attr_json["attributes"].insert(0, "secret_key")
             sk = SecretKey.generate_random(len(attr_json["attributes"]))
             pk = PublicKey.from_secret_key(sk)
 

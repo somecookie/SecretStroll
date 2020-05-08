@@ -22,3 +22,18 @@ class IssuanceRequest:
         self.com = com
         self.s_s = s_s
         self.s_t = s_t
+
+
+class IssuanceResponse:
+    """Server response for an issuance request."""
+
+    def __init__(self, credential):
+        """Return a new issuance response.
+
+        Args:
+            credential (Signature): a signature on the user public and private attibutes
+
+        Return:
+            IssuanceResponse: a new instance of the class
+        """
+        self.crendential = crendential

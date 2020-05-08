@@ -3,51 +3,11 @@ Classes that you need to complete.
 """
 
 # Optional import
-from serialization import jsonpickle
+import serialization
 from petrelic.multiplicative.pairing import G1, G2, GT, G1Element, G2Element
 from petrelic.bn import Bn
 from crypto import PublicKey, SecretKey
 import json
-
-
-@jsonpickle.handlers.register(G1Element)
-class G1ElementHandler(jsonpickle.handlers.BaseHandler):
-    """Handler to pass an element of G1 to JSON format."""
-
-    def flatten(self, obj, data):
-        """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
-        data['bytes'] = obj.to_binary()
-
-    def restore(self, data):
-        """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
-        return G1Element.from_binary(data['bytes'])
-
-
-@jsonpickle.handlers.register(G2Element)
-class G2ElementHandler(jsonpickle.handlers.BaseHandler):
-    """Handler to pass an element of G2 to JSON format."""
-
-    def flatten(self, obj, data):
-        """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
-        data['bytes'] = obj.to_binary()
-
-    def restore(self, data):
-        """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
-        return G2Element.from_binary(data['bytes'])
-
-
-@jsonpickle.handlers.register(Bn)
-class BnElementHandler(jsonpickle.handlers.BaseHandler):
-    """Handler to pass an element of Bn to JSON format."""
-
-    def flatten(self, obj, data):
-        """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
-        data['bytes'] = obj.binary()
-
-    def restore(self, data):
-        """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
-        return Bn.from_binary(data['bytes'])
-
 
 class Server:
     """Server"""
@@ -77,8 +37,7 @@ class Server:
             Server.Valid_Attributes = attr_json["user"] + attr_json["issuer"]
             sk = SecretKey.generate_random(len(Server.Valid_Attributes))
             pk = PublicKey.from_secret_key(sk)
-
-            return jsonpickle.encode(sk), jsonpickle.encode(pk)
+            return str.encode(serialization.jsonpickle.encode(sk), "utf-8"), str.encode(serialization.jsonpickle.encode(pk), "utf-8")
 
     @staticmethod
     def verify_attributes_list(attrs):

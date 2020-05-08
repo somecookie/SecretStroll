@@ -36,6 +36,15 @@ class PublicKey:
 
         return PublicKey(X, Y1, Y2)
 
+    def __str__(self):
+        y1_str = ""
+        for i,el in enumerate(self.Y1):
+            y1_str += "\n     Y1_{}: {}".format(i,el)
+        y2_str = ""
+        for i,el in enumerate(self.Y2):
+            y2_str += "\n     Y2_{}: {}".format(i,el)
+        return "X: {}\nY1:{}\nY2:{}".format(self.X, y1_str, y2_str)
+
 
 class SecretKey:
     """Secret Key in PS cryptosystem."""
@@ -71,3 +80,9 @@ class SecretKey:
         y = [G1.order().random() for _ in range(y_length)]
 
         return SecretKey(x, y)
+
+    def __str__(self):
+        y_str = ""
+        for i, el in enumerate(self.y):
+            y_str += "\ny_{}: {}".format(i,el)
+        return "x: {}{}".format(self.x,y_str)

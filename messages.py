@@ -36,4 +36,4 @@ class IssuanceResponse:
         Return:
             IssuanceResponse: a new instance of the class
         """
-        self.crendential = crendential
+        self.crendential = credential

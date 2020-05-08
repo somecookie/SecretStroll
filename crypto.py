@@ -90,7 +90,7 @@ class Signature:
         self.epsilon2 = epsilon2
 
     def verify(self, pk, messages):
-        """Verifiy a signature.
+        """Verify a signature.
 
         Args:
             pk (PublicKey): the public key

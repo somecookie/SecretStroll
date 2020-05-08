@@ -9,8 +9,8 @@ from serialization import jsonpickle
 
 
 class ServerPublicInfo:
-    def __init__(self, pk, valid_attributes):
-        self.pk = pk
+    def __init__(self, public_key, valid_attributes):
+        self.public_key = public_key
         self.valid_attributes = valid_attributes
 
 
@@ -82,7 +82,9 @@ class Server:
             response (bytes[]): the client should be able to build a credential
             with this response.
         """
-        raise NotImplementedError
+        req = issuance_request.decode("utf-8")
+        req = jsonpickle.decode(req)
+
 
     def check_request_signature(
             self, server_pk, message, revealed_attributes, signature

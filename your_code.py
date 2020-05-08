@@ -3,15 +3,21 @@ Classes that you need to complete.
 """
 
 # Optional import
-import serialization
+from serialization import jsonpickle
 from petrelic.multiplicative.pairing import G1, G2, GT, G1Element, G2Element
 from petrelic.bn import Bn
 from crypto import PublicKey, SecretKey
 import json
 
+
+class ServerPublicInfo:
+    def __init__(self, pk, valid_attributes):
+        self.pk = pk
+        self.valid_attributes = valid_attributes
+
+
 class Server:
     """Server"""
-    Valid_Attributes = []
 
     @staticmethod
     def generate_ca(valid_attributes):
@@ -34,31 +40,34 @@ class Server:
             attr_json = json.load(json_file)
             if not Server.verify_attributes_list(attr_json):
                 raise TypeError("attributes format is not valid")
-            Server.Valid_Attributes = attr_json["user"] + attr_json["issuer"]
-            sk = SecretKey.generate_random(len(Server.Valid_Attributes))
+            attr_json["attributes"].insert(0,"secret_key")
+            sk = SecretKey.generate_random(len(attr_json["attributes"]))
             pk = PublicKey.from_secret_key(sk)
-            return str.encode(serialization.jsonpickle.encode(sk), "utf-8"), str.encode(serialization.jsonpickle.encode(pk), "utf-8")
+
+            public_info = ServerPublicInfo(pk, attr_json["attributes"])
+
+            return jsonpickle.encode(public_info).encode("utf-8"), jsonpickle.encode(sk).encode("utf-8")
 
     @staticmethod
     def verify_attributes_list(attrs):
         """
         Verifies if the JSON that represents the valid attributes is valid.
-        The JSON for L attributes, where k of them are user determined attributes and L-k are issuer determined,
-        must have the following format:
+        The JSON for L attributes, where L-1 of them are issuer determined attributes and one is user determined. a0 is
+        the user determined attributes corresponding to the secret key of the user. The JSON opened by the server must
+        have the following format:
         {
-            "user": ["a0",...,"a_(k-1)"]
-            "issuer": ["ak",...,"a_(L-1)"]
+            "attributes": ["a1",...,"a_(L-1)"]
         }
         :param attrs: dict that represents the JSON
         :return: boolean indicating if the JSON is valid or not
         """
-        if "issuer" not in attrs or "user" not in attrs:
+        if "attributes" not in attrs:
             return False
 
-        if type(attrs["user"]) is not list or type(attrs["issuer"]) is not list:
+        if type(attrs["attributes"]) is not list:
             return False
 
-        return all([isinstance(e, str) for e in attrs["user"]]) and all([isinstance(e, str) for e in attrs["issuer"]])
+        return all([isinstance(e, str) for e in attrs["attributes"]])
 
     def register(self, server_sk, issuance_request, username, attributes):
         """ Registers a new account on the server.

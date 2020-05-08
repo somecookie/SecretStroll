@@ -5,7 +5,7 @@ from petrelic.multiplicative.pairing import G1, G2
 class PublicKey:
     """Public Key in PS cryptosystem."""
 
-    def __init__(self, X, Y1, Y2):
+    def __init__(self, X, Y1, Y2,valid_attributes):
         """Initialize a public key.
 
         Args:
@@ -19,6 +19,7 @@ class PublicKey:
         self.X = X
         self.Y1 = Y1.copy()
         self.Y2 = Y2.copy()
+        self.valid_attributes = valid_attributes
 
     @staticmethod
     def from_secret_key(sk):
@@ -34,13 +35,13 @@ class PublicKey:
         Y1 = list(map(lambda y: G1.generator() ** y, sk.y))
         Y2 = list(map(lambda y: G2.generator() ** y, sk.y))
 
-        return PublicKey(X, Y1, Y2)
+        return PublicKey(X, Y1, Y2, sk.valid_attributes)
 
 
 class SecretKey:
     """Secret Key in PS cryptosystem."""
 
-    def __init__(self, x, y):
+    def __init__(self, x, y, valid_attributes):
         """Initialize a public key.
 
         Args:
@@ -53,9 +54,10 @@ class SecretKey:
         self.X = G1.generator() ** x
         self.x = x
         self.y = y.copy()
+        self.valid_attributes = valid_attributes
 
     @staticmethod
-    def generate_random(y_length=1):
+    def generate_random(valid_attributes):
         """Generate a random secret key.
 
         Args:
@@ -64,13 +66,14 @@ class SecretKey:
         Returns:
             SecretKey: a new random instance of the class
         """
+        y_length = len(valid_attributes)
         if not y_length >= 1:
             raise ValueError("The number of y elements cannot be 0")
 
         x = G1.order().random()
         y = [G1.order().random() for _ in range(y_length)]
 
-        return SecretKey(x, y)
+        return SecretKey(x, y, valid_attributes)
 
 
 class Signature:

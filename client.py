@@ -247,6 +247,7 @@ def client_register(args):
             public_key, username, attributes
         )
 
+
         host, proxy = get_conn_params(args.tor)
 
         url = "http://{}/register".format(host)

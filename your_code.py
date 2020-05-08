@@ -6,48 +6,9 @@ Classes that you need to complete.
 from serialization import jsonpickle
 from petrelic.multiplicative.pairing import G1, G2, GT, G1Element, G2Element
 from petrelic.bn import Bn
-from .crypto import PublicKey, SecretKey
-from .messages import IssuanceRequest
+from crypto import PublicKey, SecretKey
+from messages import IssuanceRequest, IssuanceResponse
 import hashlib
-
-
-@jsonpickle.handlers.register(G1Element)
-class G1ElementHandler(jsonpickle.handlers.BaseHandler):
-    """Handler to pass an element of G1 to JSON format."""
-
-    def flatten(obj, data):
-        """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
-        data['bytes'] = obj.to_binary()
-
-    def restore(data):
-        """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
-        return G1Element.from_binary(data['bytes'])
-
-
-@jsonpickle.handlers.register(G2Element)
-class G2ElementHandler(jsonpickle.handlers.BaseHandler):
-    """Handler to pass an element of G2 to JSON format."""
-
-    def flatten(obj, data):
-        """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
-        data['bytes'] = obj.to_binary()
-
-    def restore(data):
-        """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
-        return G2Element.from_binary(data['bytes'])
-
-
-@jsonpickle.handlers.register(Bn)
-class BnElementHandler(jsonpickle.handlers.BaseHandler):
-    """Handler to pass an element of Bn to JSON format."""
-
-    def flatten(obj, data):
-        """Refer to jsonpickle.handlers.BaseHandler.flatten doc."""
-        data['bytes'] = obj.binary()
-
-    def restore(data):
-        """Refer to jsonpickle.handlers.BaseHandler.restore doc."""
-        return Bn.from_binary(data['bytes'])
 
 
 class Server:

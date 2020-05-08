@@ -9,7 +9,7 @@ class PublicKey:
         """Initialize a public key.
 
         Args:
-            X (petrelic.multiplicative.pairing.G1): element of group G1
+            X (petrelic.multiplicative.pairing.G2): element of group G2
             Y1 (petrelic.multiplicative.pairing.G1[]): a list of elements of group G1
             Y2 (petrelic.multiplicative.pairing.G2[]): a list of elements of group G2
 
@@ -29,7 +29,7 @@ class PublicKey:
         Return:
             PublicKey: a new instance of the class
         """
-        X = G1.generator() ** sk.x
+        X = G2.generator() ** sk.x
         Y1 = list(map(lambda y: G1.generator()**y, sk.y))
         Y2 = list(map(lambda y: G2.generator()**y, sk.y))
 
@@ -69,3 +69,43 @@ class SecretKey:
         y = [G1.order().random() for _ in range(y_length)]
 
         return SecretKey(x, y)
+
+
+class Signature:
+    """Represent a signature using PS scheme."""
+
+    def __init__(self, epsilon1, epsilon2):
+        """Initialize a signature
+
+        Args:
+            epsilon1 (petrelic.multiplicative.pairing.G1Element) first part of the sig
+            epsilon2 (petrelic.multiplicative.pairing.G1Element) second part of the sig
+
+        Returns:
+            Signature: a new instance of the class
+        """
+        self.epsilon1 = epsilon1
+        self.epsilon2 = epsilon2
+
+
+    def verify(self, pk, messages):
+        """Verifiy a signature.
+
+        Args:
+            pk (PublicKey): the public key
+            messages (petrelic.bn.Bn[]): the array of messages
+
+        Return:
+            Bool: whether the signature is correct
+        """
+        if self.epsilon1 == G1.neutral_element():
+            return False
+
+        if len(messages) != len(pk.Y2):
+            return False
+
+        acc = pk.X
+        for i in range(len(messages)):
+            acc = acc * (pk.Y2[i] ** messages[i])
+
+        return self.epsilon1.pair(acc) == self.epsilon2.pair(G2.generator())

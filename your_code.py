@@ -6,7 +6,7 @@ Classes that you need to complete.
 from serialization import jsonpickle
 from petrelic.multiplicative.pairing import G1, G2, GT, G1Element, G2Element
 from petrelic.bn import Bn
-from crypto import PublicKey, SecretKey
+from crypto import PublicKey, SecretKey, Signature
 from messages import IssuanceRequest, IssuanceResponse
 import hashlib
 
@@ -91,7 +91,7 @@ class Client:
                 from prepare_registration to proceed_registration_response.
                 You need to design the state yourself.
         """
-        server_pk_parsed = jsonpickle.decode(server_pk)
+        server_pk_parsed = jsonpickle.decode(server_pk.decode('utf-8'))
         secret_key = SecretKey.generate_random()
         t = G1.order().random()
         r_t = G1.order().random()
@@ -112,7 +112,7 @@ class Client:
 
         req = IssuanceRequest(username, attributes, C, s_s, s_t)
 
-        return jsonpickle.encode(req)
+        return (jsonpickle.encode(req).encode('utf-8'), (secret_key, attributes, t))
 
     def proceed_registration_response(self, server_pk, server_response, private_state):
         """Process the response from the server.
@@ -126,7 +126,17 @@ class Client:
         Return:
             credential (byte []): create an attribute-based credential for the user
         """
-        raise NotImplementedError
+        server_pk_parsed = jsonpickle.decode(server_pk.decode('utf-8'))
+        (secret_key, attributes, t) = private_state
+        issuance_response = jsonpickle.decode(server_response.decode('utf-8'))
+        sig = issuance_response.crendential
+
+        credential = Signature(sig.epsilon1, sig.epsilon2 / (sig.epsilon1**t))
+
+        # TODO: verify credential
+
+        return jsonpickle.encode(credential).encode('utf-8')
+
 
     def sign_request(self, server_pk, credential, message, revealed_info):
         """Signs the request with the clients credential.

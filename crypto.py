@@ -5,18 +5,18 @@ from petrelic.multiplicative.pairing import G1, G2
 class PublicKey:
     """Public Key in PS cryptosystem."""
 
-    def __init__(self, X, Y1, Y2,valid_attributes):
+    def __init__(self, X2, Y1, Y2, valid_attributes):
         """Initialize a public key.
 
         Args:
-            X (petrelic.multiplicative.pairing.G2): element of group G2
+            X2 (petrelic.multiplicative.pairing.G2): element of group G2
             Y1 (petrelic.multiplicative.pairing.G1[]): a list of elements of group G1
             Y2 (petrelic.multiplicative.pairing.G2[]): a list of elements of group G2
 
         Returns:
             PublicKey: a new instance of the class
         """
-        self.X = X
+        self.X2 = X2
         self.Y1 = Y1.copy()
         self.Y2 = Y2.copy()
         self.valid_attributes = valid_attributes
@@ -31,11 +31,11 @@ class PublicKey:
         Return:
             PublicKey: a new instance of the class
         """
-        X = G2.generator() ** sk.x
+        X2 = G2.generator() ** sk.x
         Y1 = list(map(lambda y: G1.generator() ** y, sk.y))
         Y2 = list(map(lambda y: G2.generator() ** y, sk.y))
 
-        return PublicKey(X, Y1, Y2, sk.valid_attributes)
+        return PublicKey(X2, Y1, Y2, sk.valid_attributes)
 
 
 class SecretKey:
@@ -79,18 +79,18 @@ class SecretKey:
 class Signature:
     """Represent a signature using PS scheme."""
 
-    def __init__(self, epsilon1, epsilon2):
+    def __init__(self, sigma1, sigma2):
         """Initialize a signature
 
         Args:
-            epsilon1 (petrelic.multiplicative.pairing.G1Element) first part of the sig
-            epsilon2 (petrelic.multiplicative.pairing.G1Element) second part of the sig
+            sigma1 (petrelic.multiplicative.pairing.G1Element) first part of the sig
+            sigma2 (petrelic.multiplicative.pairing.G1Element) second part of the sig
 
         Returns:
             Signature: a new instance of the class
         """
-        self.epsilon1 = epsilon1
-        self.epsilon2 = epsilon2
+        self.sigma1 = sigma1
+        self.sigma2 = sigma2
 
     def verify(self, pk, messages):
         """Verify a signature.
@@ -102,14 +102,17 @@ class Signature:
         Return:
             Bool: whether the signature is correct
         """
-        if self.epsilon1 == G1.neutral_element():
+        if self.sigma1 == G1.neutral_element():
+
             return False
 
         if len(messages) != len(pk.Y2):
+            print("non-matching lengths")
             return False
 
-        acc = pk.X
+        acc = pk.X2
         for i in range(len(messages)):
             acc = acc * (pk.Y2[i] ** messages[i])
 
-        return self.epsilon1.pair(acc) == self.epsilon2.pair(G2.generator())
+        print(self.sigma1.pair(acc), self.sigma2.pair(G2.generator()))
+        return self.sigma1.pair(acc) == self.sigma2.pair(G2.generator())

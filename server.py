@@ -180,7 +180,6 @@ def register():
     username = request.args.get("username")
     attributes = request.args.get("attributes")
     issuance_req = request.args.get("issuance_req")
-    print(issuance_req)
     anon_cred = SERVER.register(SECRET_KEY, issuance_req, username, attributes)
 
     res = make_response(anon_cred)

@@ -11,6 +11,7 @@ import serialization
 from messages import IssuanceResponse, IssuanceRequest
 import hashlib
 
+
 class Server:
     """Server"""
 
@@ -61,6 +62,10 @@ class Server:
 
         attrs = attributes.split(",")
 
+        # Handle empty attrs list
+        if len(attrs) == 1 and attrs[0] == '':
+            attrs = []
+
         for attr in attrs:
             if attr not in sk.valid_attributes:
                 print("attributes are not valid")
@@ -73,8 +78,9 @@ class Server:
         m.update(req.R.to_binary())
         m.update(req.commitment.to_binary())
 
-        c = Bn.from_hex(m.hexdigest())
-        R = (G1.generator() ** req.s_t) * (pk.Y1[0] ** req.s_s) * (req.commitment ** c)
+        c = Bn.from_hex(m.hexdigest()).mod(G1.order())
+        R = (G1.generator() ** req.s_t) * \
+            (pk.Y1[0] ** req.s_s) * (req.commitment ** c)
 
         if req.R != R:
             print("Rs are not equal")
@@ -84,14 +90,14 @@ class Server:
         sig1 = G1.generator() ** u
 
         sig2 = sk.X * req.commitment
-        for i, attr in enumerate(sk.valid_attributes[1:]):
+        for i, attr in enumerate(sk.valid_attributes[1:], 1):
             exp = 1 if attr in attributes else 0
             sig2 = sig2 * (pk.Y1[i] ** exp)
         sig2 = sig2 ** u
 
         credential = Signature(sig1, sig2)
         resp = IssuanceResponse(credential)
-        return serialization.jsonpickle.encode(resp).encode("utf8")
+        return serialization.jsonpickle.encode(resp).encode("utf-8")
 
     def check_request_signature(
             self, server_pk, message, revealed_attributes, signature
@@ -135,9 +141,7 @@ class Client:
 
         server_pk = serialization.jsonpickle.decode(server_pk.decode('utf-8'))
         secret_key = G1.order().random()
-        print("secret: ", secret_key)
         t = G1.order().random()
-        print("t: ", t)
         r_t = G1.order().random()
         r_s = G1.order().random()
         R = (G1.generator() ** r_t) * (server_pk.Y1[0] ** r_s)
@@ -150,12 +154,18 @@ class Client:
         m.update(R.to_binary())
         m.update(C.to_binary())
 
-        c = Bn.from_hex(m.hexdigest())
+        c = Bn.from_hex(m.hexdigest()).mod(G1.order())
         s_t = r_t.mod_sub(c * t, G1.order())
         s_s = r_s.mod_sub(c * secret_key, G1.order())
 
         req = IssuanceRequest(C, R, s_s, s_t)
         req_bytes = serialization.jsonpickle.encode(req).encode('utf-8')
+
+        # Handle empty attrs list
+        attributes = attributes.split(',')
+        if len(attributes) == 1 and attributes[0] == '':
+            attributes = []
+
         return req_bytes, (secret_key, attributes, t)
 
     def proceed_registration_response(self, server_pk, server_response, private_state):
@@ -174,28 +184,29 @@ class Client:
         if server_response == b"":
             raise ValueError("empty response for registration")
 
-        server_pk_parsed = serialization.jsonpickle.decode(server_pk.decode('utf-8'))
+        server_pk_parsed = serialization.jsonpickle.decode(
+            server_pk.decode('utf-8'))
         (secret_key, attributes, t) = private_state
-        issuance_response = serialization.jsonpickle.decode(server_response.decode('utf-8'))
+        issuance_response = serialization.jsonpickle.decode(
+            server_response.decode('utf-8'))
         sig = issuance_response.credential
 
         credential = Signature(sig.sigma1, sig.sigma2 / (sig.sigma1 ** t))
 
-        # TODO: verify credential
-        # messages = [secret_key]
-        # for attr in server_pk_parsed.valid_attributes[1:]:
-        #     m = Bn.from_num(1) if attr in attributes else Bn.from_num(0)
-        #     messages.append(m)
-        #
-        # if not credential.verify(server_pk_parsed, messages):
-        #     raise ValueError("received credentials are not valid")
+        messages = [secret_key]
+        for attr in server_pk_parsed.valid_attributes[1:]:
+            m = Bn.from_num(1) if attr in attributes else Bn.from_num(0)
+            messages.append(m)
+
+        if not credential.verify(server_pk_parsed, messages):
+            raise ValueError("received credentials are not valid")
 
         return serialization.jsonpickle.encode(credential).encode('utf-8')
 
     def sign_request(self, server_pk, credential, message, revealed_info):
         """Signs the request with the clients credential.
 
-        Arg:
+        arg:
             server_pk (byte[]): a server's public key (serialized)
             credential (byte[]): client's credential (serialized)
             message (byte[]): message to sign
@@ -203,7 +214,7 @@ class Client:
 
             Note: You can use JSON to encode revealed_info.
 
-        Returns:
+        returns:
             byte []: message's signature (serialized)
         """
         raise NotImplementedError

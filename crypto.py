@@ -12,6 +12,7 @@ class PublicKey:
             X2 (petrelic.multiplicative.pairing.G2): element of group G2
             Y1 (petrelic.multiplicative.pairing.G1[]): a list of elements of group G1
             Y2 (petrelic.multiplicative.pairing.G2[]): a list of elements of group G2
+            valid_attrbiutes (string[]): list of valid attributes
 
         Returns:
             PublicKey: a new instance of the class
@@ -47,6 +48,7 @@ class SecretKey:
         Args:
             x (petrelic.bn.Bn): element in Z_p
             y (petrelic.bn.Bn[]): a list of elements in Z_p
+            valid_attrbiutes (string[]): list of valid attributes
 
         Returns:
             SecretKey: a new instance of the class
@@ -61,7 +63,7 @@ class SecretKey:
         """Generate a random secret key.
 
         Args:
-            y_length (int): the number of y elements. Must be >= 1
+            valid_attrbiutes (string[]): list of valid attributes
 
         Returns:
             SecretKey: a new random instance of the class
@@ -103,16 +105,13 @@ class Signature:
             Bool: whether the signature is correct
         """
         if self.sigma1 == G1.neutral_element():
-
             return False
 
         if len(messages) != len(pk.Y2):
-            print("non-matching lengths")
             return False
 
         acc = pk.X2
         for i in range(len(messages)):
             acc = acc * (pk.Y2[i] ** messages[i])
 
-        print(self.sigma1.pair(acc), self.sigma2.pair(G2.generator()))
         return self.sigma1.pair(acc) == self.sigma2.pair(G2.generator())

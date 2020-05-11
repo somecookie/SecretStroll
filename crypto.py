@@ -1,5 +1,5 @@
 """Define the PS cryptosystem primitives."""
-from petrelic.multiplicative.pairing import G1, G2
+from petrelic.multiplicative.pairing import G1, G2, GT
 from petrelic.bn import Bn
 import hashlib
 
@@ -141,7 +141,7 @@ class GeneralizedSchnorrProof:
         if self.random_exp is None:
             self.random_exp = [G1.order().random() for _ in range(len(self.bases))]
 
-        com = 1
+        com = GT.neutral_element()
         for i in range(len(self.bases)):
             com = com * self.bases[i] ** self.random_exp[i]
 
@@ -153,8 +153,8 @@ class GeneralizedSchnorrProof:
         m = hashlib.sha256()
         for base in self.bases:
             m.update(base.to_binary())
-        m.update(self.get_commitment())
-        m.update(self.statement)
+        m.update(self.get_commitment().to_binary())
+        m.update(self.statement.to_binary())
 
         if message is not None:
             m.update(message)
@@ -170,7 +170,7 @@ class GeneralizedSchnorrProof:
         r = []
         for i in range(len(self.bases)):
             mult = challenge*self.secrets[i]
-            r.append(self.random_exp[i].AddMod(mult, G1.order()))
+            r.append(self.random_exp[i].mod_add(mult, G1.order()))
 
         return r
 
@@ -179,7 +179,7 @@ class GeneralizedSchnorrProof:
             raise ValueError("Challenge responses must be given.")
 
         left = self.commitment * self.statement**challenge
-        right = 1
+        right = GT.neutral_element()
 
         for i in range(len(self.responses)):
             right = right * self.bases[i]**self.responses[i]

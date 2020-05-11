@@ -116,14 +116,15 @@ class Server:
             valid (boolean): is signature valid
         """
         server_pk_parsed = serialization.jsonpickle.decode(server_pk.decode('utf-8'))
-        revealed_attributes = revealed_attributes.split[',']
+        revealed_attributes = revealed_attributes.split(',')
         if len(revealed_attributes) == 0 and revealed_attributes[0] == '':
             revealed_attributes = []
 
-        req = serialization.jsonpickle.decode(signature.decode('utf-8'))
+        print("SIG = ::::::::::::", signature)
+        req = serialization.jsonpickle.decode(signature)
 
         statement = req.r_sig.sigma2.pair(G2.generator())
-        statement = statement / req.r_siq.sigma1.pair(server_pk_parsed.X2)
+        statement = statement / req.r_sig.sigma1.pair(server_pk_parsed.X2)
         bases = []
 
         # Add base for t
@@ -143,7 +144,6 @@ class Server:
         c = proof.get_shamir_challenge(message)
 
         return proof.verify(c)
-
 
 
 class Client:

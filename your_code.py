@@ -135,7 +135,7 @@ class Server:
         for i, attr in enumerate(server_pk_parsed.valid_attributes[1:], 1):
             Yi = server_pk_parsed.Y2[i]
             if attr in revealed_attributes:
-                statement = statement * req.r_sig.sigma1.pair(Yi)
+                statement = statement / req.r_sig.sigma1.pair(Yi)
 
             bases.append(req.r_sig.sigma1.pair(Yi))
 

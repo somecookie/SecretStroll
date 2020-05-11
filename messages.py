@@ -39,7 +39,19 @@ class IssuanceResponse:
 
 
 class RequestSignature:
+    """Signature on a user request."""
     def __init__(self, randomized_signature, commitment, responses):
+        """Return a new signature on a user request.
+
+        Args:
+            randomized_signature (Signature): a randomized crendential
+            commitment (petrelic.multiplicative.groupElement): commitment on
+                the random values of the PoK
+            reponses (petrelic.bn.Bn[]): responses to the PoK challenge
+
+        Return:
+            RequestSignature: a new instance of the class
+        """
         self.r_sig = randomized_signature
         self.commitment = commitment
         self.responses = responses

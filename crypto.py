@@ -191,3 +191,6 @@ class GeneralizedSchnorrProof:
             right = right * self.bases[i]**self.responses[i]
 
         return left == right
+
+    def get_statement(self):
+        return self.statement

@@ -72,24 +72,21 @@ class Server:
                 return b''
 
         req = serialization.jsonpickle.decode(issuance_request)
-        m = hashlib.sha256()
-        m.update(G1.generator().to_binary())
-        m.update(pk.Y1[0].to_binary())
-        m.update(req.R.to_binary())
-        m.update(req.commitment.to_binary())
 
-        c = Bn.from_hex(m.hexdigest()).mod(G1.order())
-        R = (G1.generator() ** req.s_t) * \
-            (pk.Y1[0] ** req.s_s) * (req.commitment ** c)
+        bases = [G1.generator(), pk.Y1[0]]
 
-        if req.R != R:
-            print("Rs are not equal")
+        proof = GeneralizedSchnorrProof(G1, bases, statement=req.statement, responses=req.responses, commitment=req.commitment)
+
+        challenge = proof.get_shamir_challenge()
+
+        if not proof.verify(challenge):
+            print("Invalid proof.")
             return b''
 
         u = G1.order().random()
         sig1 = G1.generator() ** u
 
-        sig2 = sk.X * req.commitment
+        sig2 = sk.X * req.statement
         for i, attr in enumerate(sk.valid_attributes[1:], 1):
             exp = 1 if attr in attributes else 0
             sig2 = sig2 * (pk.Y1[i] ** exp)
@@ -169,23 +166,18 @@ class Client:
         server_pk = serialization.jsonpickle.decode(server_pk.decode('utf-8'))
         secret_key = G1.order().random()
         t = G1.order().random()
-        r_t = G1.order().random()
-        r_s = G1.order().random()
-        R = (G1.generator() ** r_t) * (server_pk.Y1[0] ** r_s)
-        C = (G1.generator() ** t) * (server_pk.Y1[0] ** secret_key)
 
-        # Add public inputs
-        m = hashlib.sha256()
-        m.update(G1.generator().to_binary())
-        m.update(server_pk.Y1[0].to_binary())
-        m.update(R.to_binary())
-        m.update(C.to_binary())
+        bases = [G1.generator(), server_pk.Y1[0]]
+        secrets = [t, secret_key]
 
-        c = Bn.from_hex(m.hexdigest()).mod(G1.order())
-        s_t = r_t.mod_sub(c * t, G1.order())
-        s_s = r_s.mod_sub(c * secret_key, G1.order())
+        proof = GeneralizedSchnorrProof(G1, bases, secrets=secrets)
 
-        req = IssuanceRequest(C, R, s_s, s_t)
+        com = proof.get_commitment()
+        challenge = proof.get_shamir_challenge()
+        response = proof.get_responses(challenge)
+        statement = proof.get_statement()
+
+        req = IssuanceRequest(statement, com, response)
         req_bytes = serialization.jsonpickle.encode(req).encode('utf-8')
 
         # Handle empty attrs list
@@ -261,9 +253,7 @@ class Client:
         cred_randomized = Signature(
             sig.sigma1 ** r, (sig.sigma2 * sig.sigma1 ** t)**r)
 
-        #
         # Begin generalized Schnorr Zk-PoK with Fiat-Shamir heuristic
-        #
 
         # Add t
         bases = [cred_randomized.sigma1.pair(G2.generator())]

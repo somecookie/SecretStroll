@@ -120,7 +120,6 @@ class Server:
         if len(revealed_attributes) == 0 and revealed_attributes[0] == '':
             revealed_attributes = []
 
-        print("SIG = ::::::::::::", signature)
         req = serialization.jsonpickle.decode(signature)
 
         statement = req.r_sig.sigma2.pair(G2.generator())
@@ -137,10 +136,10 @@ class Server:
             Yi = server_pk_parsed.Y2[i]
             if attr in revealed_attributes:
                 statement = statement * req.r_sig.sigma1.pair(Yi)
-            else:
-                bases.append(req.r_sig.sigma1.pair(Yi))
 
-        proof = GeneralizedSchnorrProof(bases, statement, responses=req.responses)
+            bases.append(req.r_sig.sigma1.pair(Yi))
+
+        proof = GeneralizedSchnorrProof(bases, statement, responses=req.responses, commitment=req.commitment)
         c = proof.get_shamir_challenge(message)
 
         return proof.verify(c)
@@ -268,12 +267,12 @@ class Client:
 
         # Add t
         bases = [cred_randomized.sigma1.pair(G2.generator())]
-        statement = bases[0] ** t
+        statement = bases[-1] ** t
         secrets = [t]
 
         # Add secret key
         bases.append(cred_randomized.sigma1.pair(server_pk_parsed.Y2[0]))
-        statement = statement * bases[1]
+        statement = statement * bases[-1]**cred.secret_key
         secrets.append(cred.secret_key)
 
         for i, attr in enumerate(server_pk_parsed.valid_attributes[1:], 1):

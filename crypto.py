@@ -126,13 +126,13 @@ class Credential:
 
 
 class GeneralizedSchnorrProof:
-    def __init__(self, bases, statement, secrets=None, responses=None):
+    def __init__(self, bases, statement, secrets=None, responses=None, commitment=None):
         self.bases = bases
         self.statement = statement
         self.secrets = secrets
         self.responses = responses
+        self.commitment = commitment
         self.random_exp = None
-        self.commitment = None
 
     def get_commitment(self):
         if self.commitment is not None:
@@ -184,4 +184,5 @@ class GeneralizedSchnorrProof:
         for i in range(len(self.responses)):
             right = right * self.bases[i]**self.responses[i]
 
+        print("SIG VALID ?", left, right)
         return left == right

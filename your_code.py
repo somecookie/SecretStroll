@@ -139,7 +139,7 @@ class Server:
 
             bases.append(req.r_sig.sigma1.pair(Yi))
 
-        proof = GeneralizedSchnorrProof(bases, statement, responses=req.responses, commitment=req.commitment)
+        proof = GeneralizedSchnorrProof(GT, bases, statement, responses=req.responses, commitment=req.commitment)
         c = proof.get_shamir_challenge(message)
 
         return proof.verify(c)
@@ -267,22 +267,19 @@ class Client:
 
         # Add t
         bases = [cred_randomized.sigma1.pair(G2.generator())]
-        statement = bases[-1] ** t
         secrets = [t]
 
         # Add secret key
         bases.append(cred_randomized.sigma1.pair(server_pk_parsed.Y2[0]))
-        statement = statement * bases[-1]**cred.secret_key
         secrets.append(cred.secret_key)
 
         for i, attr in enumerate(server_pk_parsed.valid_attributes[1:], 1):
             # Add only if it is a hidden attribute
             exp = 1 if attr in cred.attributes and attr not in revealed_info else 0
             bases.append(cred_randomized.sigma1.pair(server_pk_parsed.Y2[i]))
-            statement = statement * bases[-1]**exp
             secrets.append(exp)
 
-        proof = GeneralizedSchnorrProof(bases, statement, secrets=secrets)
+        proof = GeneralizedSchnorrProof(GT, bases, secrets=secrets)
         com = proof.get_commitment()
         c = proof.get_shamir_challenge(message)
         responses = proof.get_responses(c)

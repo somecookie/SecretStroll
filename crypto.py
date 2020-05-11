@@ -126,22 +126,28 @@ class Credential:
 
 
 class GeneralizedSchnorrProof:
-    def __init__(self, bases, statement, secrets=None, responses=None, commitment=None):
+    def __init__(self, group, bases, statement=None, secrets=None, responses=None, commitment=None):
         self.bases = bases
-        self.statement = statement
         self.secrets = secrets
         self.responses = responses
         self.commitment = commitment
         self.random_exp = None
+        self.group = group
+        if statement is None and secrets is not None:
+            self.statement = group.neutral_element()
+            for i in range(len(bases)):
+                self.statement = self.statement * bases[i]**secrets[i]
+        else:
+            self.statement = statement
 
     def get_commitment(self):
         if self.commitment is not None:
             return self.commitment
 
         if self.random_exp is None:
-            self.random_exp = [G1.order().random() for _ in range(len(self.bases))]
+            self.random_exp = [self.group.order().random() for _ in range(len(self.bases))]
 
-        com = GT.neutral_element()
+        com = self.group.neutral_element()
         for i in range(len(self.bases)):
             com = com * self.bases[i] ** self.random_exp[i]
 
@@ -159,7 +165,7 @@ class GeneralizedSchnorrProof:
         if message is not None:
             m.update(message)
 
-        c = Bn.from_hex(m.hexdigest()).mod(G1.order())
+        c = Bn.from_hex(m.hexdigest()).mod(self.group.order())
 
         return c
 
@@ -170,7 +176,7 @@ class GeneralizedSchnorrProof:
         r = []
         for i in range(len(self.bases)):
             mult = challenge*self.secrets[i]
-            r.append(self.random_exp[i].mod_add(mult, G1.order()))
+            r.append(self.random_exp[i].mod_add(mult, self.group.order()))
 
         return r
 
@@ -179,10 +185,9 @@ class GeneralizedSchnorrProof:
             raise ValueError("Challenge responses must be given.")
 
         left = self.commitment * self.statement**challenge
-        right = GT.neutral_element()
+        right = self.group.neutral_element()
 
         for i in range(len(self.responses)):
             right = right * self.bases[i]**self.responses[i]
 
-        print("SIG VALID ?", left, right)
         return left == right

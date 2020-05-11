@@ -142,6 +142,13 @@ class GeneralizedSchnorrProof:
     def __init__(self, group, bases, statement=None, secrets=None, responses=None, commitment=None):
         """Create a new instance of a proof.
 
+        This allows to prove knowledge of some secrets x_1, ..., x_k in the
+        representation y = g_1^x_1 * ... * g_k^x_k, where g_i are generators of
+        a Schnorr group. The proofs are non-interactive. The description of the
+        equivalent interactive protocole is available in Brands, Stefan A. "An
+        efficient off-line electronic cash system based on the representation
+        problem.", at chapter 8.
+
         For a Prover, the secrets argument is mandatory. If the statement is
         not present but the secrets are given, the statement will be
         automatically generated.

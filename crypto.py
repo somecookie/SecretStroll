@@ -1,5 +1,7 @@
 """Define the PS cryptosystem primitives."""
 from petrelic.multiplicative.pairing import G1, G2
+from petrelic.bn import Bn
+import hashlib
 
 
 class PublicKey:
@@ -115,3 +117,71 @@ class Signature:
             acc = acc * (pk.Y2[i] ** messages[i])
 
         return self.sigma1.pair(acc) == self.sigma2.pair(G2.generator())
+
+class Credential:
+    def __init__(self, secret_key, attributes, signature):
+        self.secret_key = secret_key
+        self.attributes = attributes
+        self.signature = signature
+
+
+class GeneralizedSchnorrProof:
+    def __init__(self, bases, statement, secrets=None, responses=None):
+        self.bases = bases
+        self.statement = statement
+        self.secrets = secrets
+        self.responses = responses
+        self.random_exp = None
+        self.commitment = None
+
+    def get_commitment(self):
+        if self.commitment is not None:
+            return self.commitment
+
+        if self.random_exp is None:
+            self.random_exp = [G1.order().random() for _ in range(len(self.bases))]
+
+        com = 1
+        for i in range(len(self.bases)):
+            com = com * self.bases[i] ** self.random_exp[i]
+
+        self.commitment = com
+
+        return com
+
+    def get_shamir_challenge(self, message=None):
+        m = hashlib.sha256()
+        for base in self.bases:
+            m.update(base.to_binary())
+        m.update(self.get_commitment())
+        m.update(self.statement)
+
+        if message is not None:
+            m.update(message)
+
+        c = Bn.from_hex(m.hexdigest()).mod(G1.order())
+
+        return c
+
+    def get_responses(self, challenge):
+        if self.secrets is None:
+            raise ValueError("Secrets must be given.")
+
+        r = []
+        for i in range(len(self.bases)):
+            mult = challenge*self.secrets[i]
+            r.append(self.random_exp[i].AddMod(mult, G1.order()))
+
+        return r
+
+    def verify(self, challenge):
+        if self.responses is None:
+            raise ValueError("Challenge responses must be given.")
+
+        left = self.commitment * self.statement**challenge
+        right = 1
+
+        for i in range(len(self.responses)):
+            right = right * self.bases[i]**self.responses[i]
+
+        return left == right

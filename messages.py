@@ -39,3 +39,10 @@ class IssuanceResponse:
 
         self.credential = credential
 
+
+class RequestSignature:
+    def __init__(self, randomized_signature, commitment, responses):
+        self.r_sig = randomized_signature
+        self.commitment = commitment
+        self.responses = responses
+

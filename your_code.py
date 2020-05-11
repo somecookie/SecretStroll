@@ -4,11 +4,11 @@ Classes that you need to complete.
 
 import json
 
-from crypto import PublicKey, SecretKey, Signature
-from petrelic.multiplicative.pairing import G1
+from crypto import PublicKey, SecretKey, Signature, Credential, GeneralizedSchnorrProof
+from petrelic.multiplicative.pairing import G1, G2, GT
 from petrelic.bn import Bn
 import serialization
-from messages import IssuanceResponse, IssuanceRequest
+from messages import IssuanceResponse, IssuanceRequest, RequestSignature
 import hashlib
 
 
@@ -191,14 +191,15 @@ class Client:
             server_response.decode('utf-8'))
         sig = issuance_response.credential
 
-        credential = Signature(sig.sigma1, sig.sigma2 / (sig.sigma1 ** t))
+        sig_unblind = Signature(sig.sigma1, sig.sigma2 / (sig.sigma1 ** t))
+        credential = Credential(secret_key, attributes, sig_unblind)
 
         messages = [secret_key]
         for attr in server_pk_parsed.valid_attributes[1:]:
             m = Bn.from_num(1) if attr in attributes else Bn.from_num(0)
             messages.append(m)
 
-        if not credential.verify(server_pk_parsed, messages):
+        if not credential.signature.verify(server_pk_parsed, messages):
             raise ValueError("received credentials are not valid")
 
         return serialization.jsonpickle.encode(credential).encode('utf-8')
@@ -217,4 +218,48 @@ class Client:
         returns:
             byte []: message's signature (serialized)
         """
-        raise NotImplementedError
+
+        # Parse args
+        server_pk_parsed = serialization.jsonpickle.decode(
+            server_pk.decode('utf-8'))
+        cred = serialization.jsonpickle.decode(credential.decode('utf-8'))
+        revealed_info = revealed_info.split(',')
+        if len(revealed_info) == 1 and revealed_info[0] == '':
+            revealed_info = []
+
+        # Start PoK
+        sig = cred.signature
+        r = G1.order().random()
+        t = G1.order().random()
+        cred_randomized = Signature(
+            sig.sigma1 ** r, (sig.sigma2 * sig.sigma1 ** t)**r)
+
+        #
+        # Begin generalized Schnorr Zk-PoK with Fiat-Shamir heuristic
+        #
+
+        # Add t
+        bases = [cred_randomized.sigma1.pair(G2.generator())]
+        statement = bases[0] ** t
+        secrets = [t]
+
+        # Add secret key
+        bases.append(cred_randomized.sigma1.pair(server_pk_parsed.Y2[0]))
+        statement = statement * bases[1]
+        secrets.append(cred.secret_key)
+
+        for i, attr in enumerate(server_pk_parsed.valid_attributes[1:], 1):
+            # Add only if it is a hidden attribute
+            exp = 1 if attr in cred.attributes and attr not in revealed_info else 0
+            bases.append(cred_randomized.sigma1.pair(server_pk_parsed.Y2[i]))
+            statement = statement * bases[-1]**exp
+            secrets.append(exp)
+
+        proof = GeneralizedSchnorrProof(bases, statement, secrets=secrets)
+        com = proof.get_commitment()
+        c = proof.get_shamir_challenge(message)
+        responses = proof.get_responses(c)
+
+        req = RequestSignature(cred_randomized, com, responses)
+
+        return serialization.jsonpickle.encode(req).encode('utf-8')

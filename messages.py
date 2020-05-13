@@ -4,24 +4,20 @@
 class IssuanceRequest:
     """Client request for credentials."""
 
-    def __init__(self, commitment, R, s_s, s_t):
+    def __init__(self, statement, commitment, responses):
         """Return a new instance of an issuance request.
 
         Args:
-            username (string): username of the user
-            attributes (string): the attributes of the user in JSON format
-            commitment (petrelic.multiplicative.pairing.G1): ZK-PoK commitment to hidden attributes
-            R (petrelic.multiplicative.pairing.G1): commitment in the ZK-Pok
-            s_s (petrelic.bn.Bn): ZK-PoK response for the secret part
-            s_t (petrelic.bn.Bn): ZK-PoK response for the random t part
+            statement (petrelic.multiplicative.pairing.G1): ZK-PoK statement to be proven
+            commitment (petrelic.multiplicative.pairing.G1): commitment in the ZK-Pok
+            responses (petrelic.bn.Bn[]): ZK-PoK responses
 
         Returns:
             IssuanceRequest: a new instance of the class
             """
         self.commitment = commitment
-        self.R = R
-        self.s_s = s_s
-        self.s_t = s_t
+        self.statement = statement
+        self.responses = responses
 
 
 class IssuanceResponse:
@@ -38,4 +34,23 @@ class IssuanceResponse:
         """
 
         self.credential = credential
+
+
+class RequestSignature:
+    """Signature on a user request."""
+    def __init__(self, randomized_signature, commitment, responses):
+        """Return a new signature on a user request.
+
+        Args:
+            randomized_signature (Signature): a randomized crendential
+            commitment (petrelic.multiplicative.groupElement): commitment on
+                the random values of the PoK
+            reponses (petrelic.bn.Bn[]): responses to the PoK challenge
+
+        Return:
+            RequestSignature: a new instance of the class
+        """
+        self.r_sig = randomized_signature
+        self.commitment = commitment
+        self.responses = responses
 

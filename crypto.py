@@ -1,5 +1,7 @@
 """Define the PS cryptosystem primitives."""
-from petrelic.multiplicative.pairing import G1, G2
+from petrelic.multiplicative.pairing import G1, G2, GT
+from petrelic.bn import Bn
+import hashlib
 
 
 class PublicKey:
@@ -115,3 +117,157 @@ class Signature:
             acc = acc * (pk.Y2[i] ** messages[i])
 
         return self.sigma1.pair(acc) == self.sigma2.pair(G2.generator())
+
+
+class Credential:
+    """Represent a user credential."""
+    def __init__(self, secret_key, attributes, signature):
+        """Return a new instance of a crendential.
+
+        Args:
+            secret_key (petrelic.bn.Bn): the user secret key
+            attributes (string[]): the list of attributes
+            signature (Signature): a signature on the attributes
+
+        Return:
+            Crendential: the new instance
+        """
+        self.secret_key = secret_key
+        self.attributes = attributes
+        self.signature = signature
+
+
+class GeneralizedSchnorrProof:
+    """Represent a PoK for the generalized Schnoor proof."""
+    def __init__(self, group, bases, statement=None, secrets=None, responses=None, commitment=None):
+        """Create a new instance of a proof.
+
+        This allows to prove knowledge of some secrets x_1, ..., x_k in the
+        representation y = g_1^x_1 * ... * g_k^x_k, where g_i are generators of
+        a Schnorr group. The proofs are non-interactive. The description of the
+        equivalent interactive protocole is available in Brands, Stefan A. "An
+        efficient off-line electronic cash system based on the representation
+        problem.", at chapter 8.
+
+        For a Prover, the secrets argument is mandatory. If the statement is
+        not present but the secrets are given, the statement will be
+        automatically generated.
+        For a verifier, the responses and commitment
+        arguments are mandatory.
+
+        Args:
+            group (petrelic.multiplicative.G1/G2/GT): the group for the proof
+            bases (petrelic.multiplicative.groupElement[]): the basic of
+                the representation
+            statement (petrelic.multiplicative.groupElement): the statement
+                to be proven
+            secrets (petrelic.bn.Bn[]): the exponent of the representation
+            commitment (petrelic.mutliplicative.groupElement): commitment to
+                the random values
+
+        Return:
+            GeneralizedSchnorrProof: a new instance of the class.
+        """
+        self.bases = bases
+        self.secrets = secrets
+        self.responses = responses
+        self.commitment = commitment
+        self.random_exp = None
+        self.group = group
+        if statement is None and secrets is not None:
+            self.statement = group.neutral_element()
+            for i in range(len(bases)):
+                self.statement = self.statement * bases[i]**secrets[i]
+        else:
+            self.statement = statement
+
+    def get_commitment(self):
+        """Generate the commitment for a Prover.
+
+        Return:
+            petrelic.multiplicative.groupElement: the commitment
+        """
+        if self.commitment is not None:
+            return self.commitment
+
+        if self.random_exp is None:
+            self.random_exp = [self.group.order().random() for _ in range(len(self.bases))]
+
+        com = self.group.neutral_element()
+        for i in range(len(self.bases)):
+            com = com * self.bases[i] ** self.random_exp[i]
+
+        self.commitment = com
+
+        return com
+
+    def get_shamir_challenge(self, message=None):
+        """Generate the challenge for a Prover.
+
+        This is used when applying the Fiat-Shamir heuristic.
+
+        Args:
+            message (byte[]): an optionnal message to sign
+
+        Return:
+            petrelic.bn.Bn: the challenge
+        """
+        m = hashlib.sha256()
+        for base in self.bases:
+            m.update(base.to_binary())
+        m.update(self.get_commitment().to_binary())
+        m.update(self.statement.to_binary())
+
+        if message is not None:
+            m.update(message)
+
+        c = Bn.from_hex(m.hexdigest()).mod(self.group.order())
+
+        return c
+
+    def get_responses(self, challenge):
+        """Generate the challenge responses.
+
+        Args:
+            challenge (petrelic.bn.Bn): the challenge
+
+        Return:
+            petrelic.bn.Bn[]: the list of responses
+        """
+        if self.secrets is None:
+            raise ValueError("Secrets must be given.")
+
+        r = []
+        for i in range(len(self.bases)):
+            mult = challenge*self.secrets[i]
+            r.append(self.random_exp[i].mod_add(mult, self.group.order()))
+
+        return r
+
+    def verify(self, challenge):
+        """Verifiy the proof.
+
+        Args:
+            challenge (petrelic.bn.Bn): the challenge
+
+        Return;
+            Bool: wheter the proof is correct
+        """
+        if self.responses is None:
+            raise ValueError("Challenge responses must be given.")
+
+        left = self.commitment * self.statement**challenge
+        right = self.group.neutral_element()
+
+        for i in range(len(self.responses)):
+            right = right * self.bases[i]**self.responses[i]
+
+        return left == right
+
+    def get_statement(self):
+        """Return the statement.
+
+        Return:
+            petrlic.multiplicative.groupElement: the statement
+        """
+        return self.statement

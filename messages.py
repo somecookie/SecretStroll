@@ -8,8 +8,6 @@ class IssuanceRequest:
         """Return a new instance of an issuance request.
 
         Args:
-            username (string): username of the user
-            attributes (string): the attributes of the user in JSON format
             statement (petrelic.multiplicative.pairing.G1): ZK-PoK statement to be proven
             commitment (petrelic.multiplicative.pairing.G1): commitment in the ZK-Pok
             responses (petrelic.bn.Bn[]): ZK-PoK responses

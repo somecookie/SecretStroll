@@ -114,7 +114,7 @@ class Server:
         """
         server_pk_parsed = serialization.jsonpickle.decode(server_pk.decode('utf-8'))
         revealed_attributes = revealed_attributes.split(',')
-        if len(revealed_attributes) == 0 and revealed_attributes[0] == '':
+        if len(revealed_attributes) == 1 and revealed_attributes[0] == '':
             revealed_attributes = []
 
         req = serialization.jsonpickle.decode(signature)

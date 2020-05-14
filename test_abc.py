@@ -1,4 +1,6 @@
 from your_code import Server, Client
+from serialization import jsonpickle
+import pytest
 
 
 def test_valid_run():
@@ -38,7 +40,7 @@ def test_valid_run():
                                                                                            "the client "
 
 
-def test_invalid_attribute():
+def test_invalid_attributes_from_client():
     """"
         This test performs a invalid run, i.e., the following tasks are being performed:
         - The server generates the keys and sets up the list of attributes
@@ -73,3 +75,33 @@ def test_invalid_attribute():
     # Server handles request
     assert not server.check_request_signature(server_pk, client_msg, client_reveal_attr, sig), "invalid signature from " \
                                                                                                "the client "
+
+
+def test_invalid_attributes_from_server():
+    """"
+           This test performs a invalid run, i.e., the following tasks are being performed:
+           - The server generates the keys and sets up the list of attributes
+           - The client and the server interact such that the client gets its ABC. However the credentials created
+           by the server does not use the attributes sent by the client
+           """
+
+    # Set up server
+
+    server_attr = "gym,spa,restaurant,bars"
+    server_pk, server_sk = Server.generate_ca(server_attr)
+    server = Server()
+
+    # Client issues registration request
+    client_attr = "gym,spa"
+    username = "bob"
+    client = Client()
+    issuance_request, client_private_state = client.prepare_registration(server_pk, username, client_attr)
+
+    # Server handles registration request
+    modified_client_attr = "restaurant"
+    issuance_response = server.register(server_sk, issuance_request, username, modified_client_attr)
+
+    # Client handles issuance response
+    with pytest.raises(ValueError) as e:
+        assert client.proceed_registration_response(server_pk, issuance_response, client_private_state)
+    assert str(e.value) == "received credentials are not valid"

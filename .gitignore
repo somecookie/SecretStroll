@@ -139,3 +139,4 @@ attributes.json
 *.sec
 *.pub
 *.cred
+benchmark/

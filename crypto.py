@@ -1,7 +1,8 @@
 """Define the PS cryptosystem primitives."""
-from petrelic.multiplicative.pairing import G1, G2, GT
-from petrelic.bn import Bn
 import hashlib
+
+from petrelic.bn import Bn
+from petrelic.multiplicative.pairing import G1, G2
 
 
 class PublicKey:
@@ -121,6 +122,7 @@ class Signature:
 
 class Credential:
     """Represent a user credential."""
+
     def __init__(self, secret_key, attributes, signature):
         """Return a new instance of a crendential.
 
@@ -139,6 +141,7 @@ class Credential:
 
 class GeneralizedSchnorrProof:
     """Represent a PoK for the generalized Schnoor proof."""
+
     def __init__(self, group, bases, statement=None, secrets=None, responses=None, commitment=None):
         """Create a new instance of a proof.
 
@@ -177,7 +180,7 @@ class GeneralizedSchnorrProof:
         if statement is None and secrets is not None:
             self.statement = group.neutral_element()
             for i in range(len(bases)):
-                self.statement = self.statement * bases[i]**secrets[i]
+                self.statement = self.statement * bases[i] ** secrets[i]
         else:
             self.statement = statement
 
@@ -239,7 +242,7 @@ class GeneralizedSchnorrProof:
 
         r = []
         for i in range(len(self.bases)):
-            mult = challenge*self.secrets[i]
+            mult = challenge * self.secrets[i]
             r.append(self.random_exp[i].mod_add(mult, self.group.order()))
 
         return r
@@ -256,11 +259,11 @@ class GeneralizedSchnorrProof:
         if self.responses is None:
             raise ValueError("Challenge responses must be given.")
 
-        left = self.commitment * self.statement**challenge
+        left = self.commitment * self.statement ** challenge
         right = self.group.neutral_element()
 
         for i in range(len(self.responses)):
-            right = right * self.bases[i]**self.responses[i]
+            right = right * self.bases[i] ** self.responses[i]
 
         return left == right
 

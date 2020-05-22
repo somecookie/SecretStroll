@@ -99,7 +99,6 @@ def get_families(user_infos, pois):
     grouped = groupby(sorted(list(user_infos.items()), key=lambda x: x[1]['home']), lambda x:x[1]['home'])
     for key, fam in grouped:
         if list(filter(lambda x: x['poi_id'] == key, pois))[0]['poi_type'] == 'appartment_block':
-            print("ignored")
             pass
         members = []
         for member in fam:

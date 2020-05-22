@@ -1,5 +1,5 @@
 import csv
-from grid import location_to_cell_id
+from grid import Grid
 from geopy.distance import distance
 from itertools import groupby
 
@@ -65,14 +65,15 @@ def get_user_daily_report(user, queries):
 
     return report
 
-def get_user_infos(users, queries, pois):
+def get_user_infos(users, queries, pois, grid_size):
     user_infos = {}
+    g = Grid(grid_size, pois)
 
     for user in users:
         locs = {}
         users_queries = list(filter(lambda x: x['ip_address'] == user, queries))
         for loc in n_top_loc(users_queries, 3):
-            grid = location_to_cell_id(loc[0][0], loc[0][1])
+            grid = g.location_to_cell_id(loc[0][0], loc[0][1])
             curr_pois = filter(lambda x: int(x['cell_id']) == grid, pois)
             min_dist = None
             min_type = None

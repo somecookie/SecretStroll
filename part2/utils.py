@@ -1,7 +1,7 @@
 import csv
 from grid import location_to_cell_id
 from geopy.distance import distance
-import itertools
+from itertools import groupby
 
 
 pois_types = {'appartment_block': 'home',
@@ -92,4 +92,14 @@ def get_user_infos(users, queries, pois):
         user_infos[user] = locs
 
     return user_infos
+
+def get_families(user_infos):
+    families = {}
+    grouped = groupby(sorted(list(user_infos.items()), key=lambda x: x[1]['home']), lambda x:x[1]['home'])
+    for key, fam in grouped:
+        members = []
+        for member in fam:
+            members.append(member[0])
+            families[key] = members
+    return families
 

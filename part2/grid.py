@@ -45,3 +45,14 @@ class Grid:
                 return self.pois[i]
             else:
                 return []
+
+    def get_updated_pois(self):
+        updated_pois = []
+
+        for i in self.pois:
+            for p in self.pois[i]:
+                new_poi = p
+                new_poi["cell_id"] = i
+                updated_pois.append(new_poi)
+        
+        return updated_pois

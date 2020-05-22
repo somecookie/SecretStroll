@@ -3,13 +3,10 @@ from grid import location_to_cell_id
 
 
 def n_top_loc(queries, n):
-    """
+     """
     If you want the top location of a specific user, the queries need to be filtered prior
     to the call to this function.
     """
-
-
-def n_top_loc(queries, n):
     d = {}
     for q in queries:
         loc = (float(q['lat']), float(q['lon']))

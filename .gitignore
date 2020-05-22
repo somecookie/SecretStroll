@@ -139,3 +139,5 @@ attributes.json
 *.sec
 *.pub
 *.cred
+
+*/.vscode

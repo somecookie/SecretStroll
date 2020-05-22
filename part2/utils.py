@@ -19,20 +19,18 @@ pois_types = {'appartment_block': 'home',
               }
 
 
-def n_top_loc(queries, n):
-    """
-    If you want the top location of a specific user, the queries need to be filtered prior
-    to the call to this function.
-    """
-    d = {}
-    for q in queries:
-        loc = (float(q['lat']), float(q['lon']))
-        if loc in d:
-            d[loc] += 1
-        else:
-            d[loc] = 1
-
-    return sorted(list(d), key=lambda x: x[1], reverse=True)[:n]
+def n_top_loc(queries, n=2, all=False):
+  d = {}
+  for q in queries:
+    loc = (float(q['lat']), float(q['lon']))
+    if loc in d:
+      d[loc] += 1
+    else:
+      d[loc] = 1
+    
+  if all:
+    return sorted(list(d.items()), key=lambda x: x[1], reverse=True)
+  return sorted(list(d.items()), key=lambda x: x[1], reverse=True)[:n]
 
 
 def read_csv(filename):

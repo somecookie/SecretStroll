@@ -45,7 +45,7 @@ class SecretKey:
     """Secret Key in PS cryptosystem."""
 
     def __init__(self, x, y, valid_attributes):
-        """Initialize a public key.
+        """Initialize a secret key.
 
         Args:
             x (petrelic.bn.Bn): element in Z_p

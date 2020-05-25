@@ -2,14 +2,12 @@
 Classes that you need to complete.
 """
 
-import json
-
-from crypto import PublicKey, SecretKey, Signature, Credential, GeneralizedSchnorrProof
-from petrelic.multiplicative.pairing import G1, G2, GT
 from petrelic.bn import Bn
+from petrelic.multiplicative.pairing import G1, G2, GT
+
 import serialization
+from crypto import PublicKey, SecretKey, Signature, Credential, GeneralizedSchnorrProof
 from messages import IssuanceResponse, IssuanceRequest, RequestSignature
-import hashlib
 
 
 class Server:
@@ -75,7 +73,8 @@ class Server:
 
         bases = [G1.generator(), pk.Y1[0]]
 
-        proof = GeneralizedSchnorrProof(G1, bases, statement=req.statement, responses=req.responses, commitment=req.commitment)
+        proof = GeneralizedSchnorrProof(G1, bases, statement=req.statement, responses=req.responses,
+                                        commitment=req.commitment)
 
         challenge = proof.get_shamir_challenge()
 
@@ -96,9 +95,7 @@ class Server:
         resp = IssuanceResponse(credential)
         return serialization.jsonpickle.encode(resp).encode("utf-8")
 
-    def check_request_signature(
-            self, server_pk, message, revealed_attributes, signature
-    ):
+    def check_request_signature(self, server_pk, message, revealed_attributes, signature):
         """
 
         Args:
@@ -121,13 +118,11 @@ class Server:
 
         statement = req.r_sig.sigma2.pair(G2.generator())
         statement = statement / req.r_sig.sigma1.pair(server_pk_parsed.X2)
-        bases = []
+        bases = [req.r_sig.sigma1.pair(G2.generator()), req.r_sig.sigma1.pair(server_pk_parsed.Y2[0])]
 
         # Add base for t
-        bases.append(req.r_sig.sigma1.pair(G2.generator()))
 
         # Add base for secret key
-        bases.append(req.r_sig.sigma1.pair(server_pk_parsed.Y2[0]))
 
         for i, attr in enumerate(server_pk_parsed.valid_attributes[1:], 1):
             Yi = server_pk_parsed.Y2[i]
@@ -251,7 +246,7 @@ class Client:
         r = G1.order().random()
         t = G1.order().random()
         cred_randomized = Signature(
-            sig.sigma1 ** r, (sig.sigma2 * sig.sigma1 ** t)**r)
+            sig.sigma1 ** r, (sig.sigma2 * sig.sigma1 ** t) ** r)
 
         # Begin generalized Schnorr Zk-PoK with Fiat-Shamir heuristic
 

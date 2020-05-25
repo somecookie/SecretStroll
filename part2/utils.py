@@ -69,6 +69,8 @@ def get_user_infos(users, queries, pois, grid_size):
     user_infos = {}
     g = Grid(grid_size, pois)
 
+    pois = g.get_updated_pois()
+
     for user in users:
         locs = {}
         users_queries = list(filter(lambda x: x['ip_address'] == user, queries))

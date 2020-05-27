@@ -13,7 +13,7 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import StratifiedKFold
 from scipy import stats
 
-captures_folders = ["captures_sacha", "captures_ricardo"]
+captures_folders = ["captures_sacha", "captures_ricardo", "captures_sacha_2"]
 ipv4_regex = '^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$'
 cell_count = 100
 seed = 0
@@ -98,6 +98,8 @@ def get_records(captures_folders):
             cell_folder = pathlib.Path(folder) / "cell_{}".format(cell)
             for run_csv in cell_folder.glob("*.csv"):
                 df = pd.read_csv(run_csv) 
+                if len(df) == 0:
+                    continue
                 df = df.rename(lambda x: x.split('.')[-1], axis='columns') # Remove the _ws.col. prefix in the columns name
                 records[cell].append(preprocess_record(df))
     return records

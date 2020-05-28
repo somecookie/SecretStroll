@@ -1,9 +1,0 @@
-_ws.col.Time,_ws.col.Source,_ws.col.Destination,_ws.col.Protocol,_ws.col.Length,_ws.col.Info
-"0.000000","172.18.0.2","54.38.73.16","TLSv1.2","611","Application Data"
-"0.027393","54.38.73.16","172.18.0.2","TCP","68","21002 → 36876 [ACK] Seq=1 Ack=544 Win=1452 Len=0 TSval=2670295897 TSecr=1064587083"
-"0.692944","54.38.73.16","172.18.0.2","TLSv1.2","611","Application Data"
-"0.692988","172.18.0.2","54.38.73.16","TCP","68","36876 → 21002 [ACK] Seq=544 Ack=544 Win=5608 Len=0 TSval=1064587776 TSecr=2670295991"
-"0.693092","54.38.73.16","172.18.0.2","TLSv1.2","611","[TCP Spurious Retransmission] , Application Data"
-"0.693106","172.18.0.2","54.38.73.16","TCP","80","[TCP Window Update] 36876 → 21002 [ACK] Seq=544 Ack=544 Win=5612 Len=0 TSval=1064587776 TSecr=2670296051 SLE=1 SRE=544"
-"0.693433","172.18.0.2","54.38.73.16","TLSv1.2","611","Application Data"
-"0.719512","54.38.73.16","172.18.0.2","TCP","68","21002 → 36876 [ACK] Seq=544 Ack=1087 Win=1452 Len=0 TSval=2670296071 TSecr=1064587776"

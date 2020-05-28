@@ -1,8 +1,0 @@
-_ws.col.Time,_ws.col.Source,_ws.col.Destination,_ws.col.Protocol,_ws.col.Length,_ws.col.Info
-"0.000000","172.18.0.2","54.38.73.16","TLSv1.2","611","Application Data"
-"0.025088","54.38.73.16","172.18.0.2","TCP","68","21002 → 36876 [ACK] Seq=1 Ack=544 Win=1452 Len=0 TSval=2673783062 TSecr=1078535636"
-"1.317470","54.38.73.16","172.18.0.2","TLSv1.2","611","Application Data"
-"1.317518","172.18.0.2","54.38.73.16","TCP","68","36876 → 21002 [ACK] Seq=544 Ack=544 Win=5608 Len=0 TSval=1078536953 TSecr=2673783335"
-"1.318461","172.18.0.2","54.38.73.16","TCP","1516","[TCP segment of a reassembled PDU]"
-"1.318555","172.18.0.2","54.38.73.16","TLSv1.2","705","Application Data"
-"1.342163","54.38.73.16","172.18.0.2","TCP","68","21002 → 36876 [ACK] Seq=544 Ack=2629 Win=1450 Len=0 TSval=2673783392 TSecr=1078536954"

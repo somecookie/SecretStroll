@@ -10,7 +10,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.model_selection import RandomizedSearchCV
 from sklearn.model_selection import train_test_split
 
-captures_folders = ["captures_sacha", "captures_ricardo","captures_sacha_2","captures_ricardo_2"]
+captures_folders = ["captures_sacha", "captures_ricardo",
+                    "captures_sacha_2", "captures_ricardo_2"]
 #captures_folders = ["captures_sacha"]
 ipv4_regex = '^172\.19\.0\.3|172\.18\.0\.2$'
 #host_addresses = ["172.19.0.3", "172.18.0.2"]
@@ -21,35 +22,46 @@ kfold_count = 10
 #
 # Functions to extract features from record
 #
+
+
 def incoming_packets_count(df):
     return len(df[df['Destination'].str.contains(ipv4_regex, regex=True)])
+
 
 def outgoing_packets_count(df):
     return len(df[df['Source'].str.contains(ipv4_regex, regex=True)])
 
+
 def total_packet_count(df):
     return len(df)
+
 
 def incoming_packets_fraction(df):
     return incoming_packets_count(df) / total_packet_count(df)
 
+
 def outgoing_packets_fraction(df):
     return outgoing_packets_count(df) / total_packet_count(df)
 
+
 def total_time(df):
     return df['Time'].iat[-1]
+
 
 def outgoing_packets_concentration_mean(df, window_size=20):
     packets = df['Source'].str.contains(ipv4_regex, regex=True)
     return packets.rolling(window_size).sum()[window_size-1::window_size].dropna().mean()
 
+
 def outgoing_packets_concentration_std(df, window_size=20):
     packets = df['Source'].str.contains(ipv4_regex, regex=True)
     return packets.rolling(window_size).sum()[window_size-1::window_size].dropna().std()
 
+
 def outgoing_packets_concentration_min(df, window_size=20):
     packets = df['Source'].str.contains(ipv4_regex, regex=True)
     return packets.rolling(window_size).sum()[window_size-1::window_size].dropna().min()
+
 
 def outgoing_packets_concentration_max(df, window_size=20):
     packets = df['Source'].str.contains(ipv4_regex, regex=True)
@@ -62,26 +74,79 @@ def average_time_between_incoming_packets(df, window_size=20):
     diffs = list(map(lambda x: x[0]-x[1], zipped))
     return pd.DataFrame(diffs).mean()
 
+
 def average_time_between_outgoing_packets(df, window_size=20):
     packets = df[df['Source'].str.contains(ipv4_regex, regex=True)]
     zipped = list(zip(packets[1:]["Time"], packets[:-1]["Time"]))
     diffs = list(map(lambda x: x[0]-x[1], zipped))
     return pd.DataFrame(diffs).mean()
+
+
+def nbr_bytes_data_sent(df):
+    packets = df[df['Source'].str.contains(ipv4_regex, regex=True)]
+    data = packets[packets["Info"].str.contains("Application Data")]
+    return data["Length"].sum()
+
+
+def nbr_bytes_data_received(df):
+    packets = df[df['Destination'].str.contains(ipv4_regex, regex=True)]
+    data = packets[packets["Info"].str.contains("Application Data")]
+    return data["Length"].sum()
+
+
+def avg_bytes_data_sent(df):
+    packets = df[df['Source'].str.contains(ipv4_regex, regex=True)]
+    data = packets[packets["Info"].str.contains("Application Data")]
+    return data["Length"].mean()
+
+
+def avg_bytes_data_received(df):
+    packets = df[df['Destination'].str.contains(ipv4_regex, regex=True)]
+    data = packets[packets["Info"].str.contains("Application Data")]
+    return data["Length"].mean()
+
+def nbr_reassembled_packets(df):
+    packets = df[df["Info"].str.contains("[TCP segment of a reassembled PDU]")]
+    return len(packets)
+
+def nbr_TCP_packets(df):
+    packets = df[df["Protocol"] == "TCP"]
+    return len(packets)
+
+def nbr_TLS_packets(df):
+    packets = df[df["Protocol"].str.contains("TLS")]
+    return len(packets)
+
+def time_of_first_response(df):
+    packets = df[df['Destination'].str.contains(ipv4_regex, regex=True)]
+    data = packets[packets["Info"].str.contains("Application Data")]
+    return data["Time"].iloc[[0]]
     
+
 
 features_names = [
     "incoming_packets_count",
     "outgoing_packets_count",
-    "total_packet_count", 
+    "total_packet_count",
     "incoming_packets_fraction",
     "outgoing_packets_fraction",
     "total_time",
     "outgoing_packets_concentration_mean",
-    "outgoing_packets_concentration_std", 
+    "outgoing_packets_concentration_std",
     "outgoing_packets_concentration_min",
-    "outgoing_packets_concentration_max", 
-    "average_time_between_incoming_packets", 
-    "average_time_between_outgoing_packets" ]
+    "outgoing_packets_concentration_max",
+    "average_time_between_incoming_packets",
+    "average_time_between_outgoing_packets",
+    "nbr_bytes_data_sent",
+    "nbr_bytes_data_received",
+    "avg_bytes_data_sent",
+    "avg_bytes_data_received",
+    "nbr_reassembled_packets",
+    "nbr_TCP_packets",
+    "nbr_TLS_packets",
+    "time_of_first_response"
+]
+
 
 def record_to_features(df):
     return [
@@ -96,19 +161,30 @@ def record_to_features(df):
         outgoing_packets_concentration_min(df),
         outgoing_packets_concentration_max(df),
         average_time_between_incoming_packets(df),
-        average_time_between_outgoing_packets(df)
+        average_time_between_outgoing_packets(df),
+        nbr_bytes_data_sent(df),
+        nbr_bytes_data_received(df),
+        avg_bytes_data_sent(df),
+        avg_bytes_data_received(df),
+        nbr_reassembled_packets(df),
+        nbr_TCP_packets(df),
+        nbr_TLS_packets(df),
+        time_of_first_response(df)
     ]
+
 
 def print_feature_importances_(feature_importances_):
     print("[...] Feature importances")
     for i, imp in enumerate(feature_importances_):
-        print("     {:50}{:2.2f}".format(features_names[i], imp*100)) 
+        print("     {:50}{:2.2f}".format(features_names[i], imp*100))
+
 
 def preprocess_record(df):
     # Remove ARP packets:
     df = df[df['Protocol'] != 'ARP']
-    
+
     return df
+
 
 def get_records(captures_folders):
     '''Iterate in the captures folders and return a dict mapping the cell ID to an array of Pandas record'''
@@ -119,12 +195,14 @@ def get_records(captures_folders):
         for folder in captures_folders:
             cell_folder = pathlib.Path(folder) / "cell_{}".format(cell)
             for run_csv in cell_folder.glob("*.csv"):
-                df = pd.read_csv(run_csv) 
+                df = pd.read_csv(run_csv)
                 if len(df) == 0:
                     continue
-                df = df.rename(lambda x: x.split('.')[-1], axis='columns') # Remove the _ws.col. prefix in the columns name
+                # Remove the _ws.col. prefix in the columns name
+                df = df.rename(lambda x: x.split('.')[-1], axis='columns')
                 records[cell].append(preprocess_record(df))
     return records
+
 
 def evaluate(model, test_features, test_labels):
     predictions = model.predict(test_features)
@@ -134,7 +212,7 @@ def evaluate(model, test_features, test_labels):
     print('Model Performance')
     print('Average Error: {:0.4f} degrees.'.format(np.mean(errors)))
     print('Accuracy = {:0.2f}%.'.format(accuracy))
-    
+
     return accuracy
 
 
@@ -146,12 +224,12 @@ records = get_records(captures_folders)
 print("[...] Cleaning up data")
 for cell in range(1, cell_count + 1):
     cell_records = records[cell]
-    
+
     # Only keep values that are between [mean-1.5std, mean+1.5std]
     # (find Tor crashes, and so on)
     tot_times = pd.DataFrame(list(map(total_time, cell_records)))
     is_in_std = tot_times.apply(stats.zscore).apply(np.abs) < 1.5
-    
+
     # Only keep records with #packets >= 20 * 2 (to use concentration features)
     # (find big outliers)
     tot_packets = pd.DataFrame(list(map(total_packet_count, cell_records)))
@@ -159,11 +237,12 @@ for cell in range(1, cell_count + 1):
 
     # Combine conditions
     should_select = is_in_std & has_enough_packets
-    
+
     # Filter records
-    records[cell] = [rec for idx, rec in enumerate(cell_records) if should_select.iat[idx, 0]]
+    records[cell] = [rec for idx, rec in enumerate(
+        cell_records) if should_select.iat[idx, 0]]
 
-
+print("[...] Creating dataset")
 # Create dataset
 X = []
 y = []
@@ -185,7 +264,8 @@ y = np.array(y)
 print("[...] Data ready")
 
 print("[...] Data split into training and testing set")
-data_train, data_test, target_train, target_test = train_test_split(X,y, test_size=0.3)
+data_train, data_test, target_train, target_test = train_test_split(
+    X, y, test_size=0.3)
 
 # print("[...] Random search on parameters")
 # # Number of trees in random forest
@@ -210,7 +290,7 @@ data_train, data_test, target_train, target_test = train_test_split(X,y, test_si
 # # Use the random grid to search for best hyperparameters
 # # First create the base model to tune
 # rf = RandomForestClassifier()
-# # Random search of parameters, using 3 fold cross validation, 
+# # Random search of parameters, using 3 fold cross validation,
 # # search across 100 different combinations, and use all available cores
 # rf_random = RandomizedSearchCV(estimator = rf, param_distributions = random_grid, n_iter = 100, cv = kfold_count, verbose=2, random_state=42, n_jobs = -1)
 # # Fit the random search model
@@ -229,20 +309,20 @@ data_train, data_test, target_train, target_test = train_test_split(X,y, test_si
 kf = StratifiedKFold(n_splits=kfold_count)
 tot_acc = 0
 #clf = RandomForestClassifier(random_state=0, n_jobs=-1,n_estimators=2000, min_samples_leaf=1, min_samples_split=5, max_features="sqrt", max_depth=10, bootstrap=True)
-clf = RandomForestClassifier(random_state=0, n_jobs=-1)
+clf = RandomForestClassifier(random_state=0, n_jobs=-1, max_features="sqrt")
 print("[...] Cross validation")
 accuracies = []
 for idx, (train_index, test_index) in enumerate(kf.split(data_train, target_train), 1):
     X_train, y_train = data_train[train_index], target_train[train_index]
     X_validation, y_validation = data_train[test_index], target_train[test_index]
-    
+
     # Train model
     clf.fit(X_train, y_train)
 
     # Predict on validation data
     acc = clf.score(X_validation, y_validation) * 100
     accuracies.append(acc)
-    
+
     print("[...] Accuracy of batch {:2d} = {:2.2f}%".format(idx, acc))
 
 print("[...] Mean accuracy = {:2.2f}%".format(np.mean(accuracies)))
@@ -252,5 +332,5 @@ print("[...] Variance accuracy = {:2.2f}%".format(np.var(accuracies)))
 # Show importance of each feature (in the array returned by record_to_features())
 print_feature_importances_(clf.feature_importances_)
 
-print("[...] Accuracy on test data: {:2.2f}%".format(clf.score(data_test, target_test)*100))
-
+print("[...] Accuracy on test data: {:2.2f}%".format(
+    clf.score(data_test, target_test)*100))

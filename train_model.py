@@ -100,8 +100,9 @@ def record_to_features(df):
     ]
 
 def print_feature_importances_(feature_importances_):
+    print("[...] Feature importances")
     for i, imp in enumerate(feature_importances_):
-        print(f"{features_names[i]}: {imp}")
+        print("     {:50}{:2.2f}".format(features_names[i], imp*100)) 
 
 def preprocess_record(df):
     # Remove ARP packets:
@@ -242,14 +243,14 @@ for idx, (train_index, test_index) in enumerate(kf.split(data_train, target_trai
     acc = clf.score(X_validation, y_validation) * 100
     accuracies.append(acc)
     
-    print("Accuracy of batch {} = {}%".format(idx, acc))
+    print("[...] Accuracy of batch {:2d} = {:2.2f}%".format(idx, acc))
 
-print("Mean accuracy = {}%".format(np.mean(accuracies)))
-print("Variance accuracy = {}%".format(np.var(accuracies)))
+print("[...] Mean accuracy = {:2.2f}%".format(np.mean(accuracies)))
+print("[...] Variance accuracy = {:2.2f}%".format(np.var(accuracies)))
 
 
 # Show importance of each feature (in the array returned by record_to_features())
 print_feature_importances_(clf.feature_importances_)
 
-print(f"Accuracy on test data: {clf.score(data_test, target_test)*100}%")
+print("[...] Accuracy on test data: {:2.2f}%".format(clf.score(data_test, target_test)*100))
 

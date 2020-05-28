@@ -141,4 +141,4 @@ attributes.json
 *.pub
 *.cred
 benchmark/
-captures/
+captures*/

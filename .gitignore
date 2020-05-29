@@ -140,3 +140,5 @@ attributes.json
 *.pub
 *.cred
 benchmark/
+.vscode/
+captures*

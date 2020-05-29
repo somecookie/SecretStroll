@@ -266,7 +266,7 @@ print("[...] Data ready")
 print("[...] Data split into training and testing set")
 data_train, data_test, target_train, target_test = train_test_split(
     X, y, test_size=0.3)
-
+print(data_train.shape)
 # print("[...] Random search on parameters")
 # # Number of trees in random forest
 # n_estimators = [int(x) for x in np.linspace(start = 200, stop = 2000, num = 10)]
